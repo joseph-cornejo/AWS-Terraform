@@ -3,161 +3,166 @@ provider "aws" {
   region = "us-east-1"
 }
 
-#Retrieve the list of AZs in the current AWS region
-data "aws_availability_zones" "available" {}
-data "aws_region" "current" {}
+#Configure to get my state file into terraform cloud
+terraform {
+  cloud {
+    organization = "Cornejo-Terraform"
+
+    workspaces {
+      name = "Networking-staging-us-east"
+    }
+  }
+}
 
 #Define the VPC 
-resource "aws_vpc" "vpc" {
-  cidr_block = var.vpc_cidr
+resource "aws_vpc" "dev-vpc" {
+  cidr_block = "10.0.0.0/16"
 
   tags = {
-    Name        = var.vpc_name
-    Environment = "demo_environment"
+    Environment = "dev_environment"
     Terraform   = "true"
-    Region      = data.aws_region.current.name
   }
 }
 
-#Deploy the private subnets
-resource "aws_subnet" "private_subnets" {
-  for_each          = var.private_subnets
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 8, each.value)
-  availability_zone = tolist(data.aws_availability_zones.available.names)[each.value]
+#Define VPC for my Docker SWARM Test Environment
+resource "aws_vpc" "swarm-vpc" {
+  cidr_block = "10.0.1.0/16"
 
   tags = {
-    Name      = each.key
-    Terraform = "true"
+    Environment = "swarm_environment"
+    Terraform   = "True"
   }
+
 }
 
-#Deploy the public subnets
-resource "aws_subnet" "public_subnets" {
-  for_each                = var.public_subnets
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = cidrsubnet(var.vpc_cidr, 8, each.value + 100)
-  availability_zone       = tolist(data.aws_availability_zones.available.names)[each.value]
-  map_public_ip_on_launch = true
+#Gateway
+resource "aws_internet_gateway" "dev-gw" {
+  vpc_id = aws_vpc.dev-vpc.id
 
   tags = {
-    Name      = each.key
-    Terraform = "true"
+    Name = "dev"
   }
 }
 
-#Create route tables for public and private subnets
-resource "aws_route_table" "public_route_table" {
-  vpc_id = aws_vpc.vpc.id
+#Route Table for Gateway
+resource "aws_route_table" "dev_route_table" {
+  vpc_id = aws_vpc.dev-vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.internet_gateway.id
-    #nat_gateway_id = aws_nat_gateway.nat_gateway.id
+    gateway_id = aws_internet_gateway.dev-gw.id
   }
-  tags = {
-    Name      = "demo_public_rtb"
-    Terraform = "true"
-  }
-}
-
-resource "aws_route_table" "private_route_table" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    # gateway_id     = aws_internet_gateway.internet_gateway.id
-    nat_gateway_id = aws_nat_gateway.nat_gateway.id
-  }
-  tags = {
-    Name      = "demo_private_rtb"
-    Terraform = "true"
-  }
-}
-
-#Create route table associations
-resource "aws_route_table_association" "public" {
-  depends_on     = [aws_subnet.public_subnets]
-  route_table_id = aws_route_table.public_route_table.id
-  for_each       = aws_subnet.public_subnets
-  subnet_id      = each.value.id
-}
-
-resource "aws_route_table_association" "private" {
-  depends_on     = [aws_subnet.private_subnets]
-  route_table_id = aws_route_table.private_route_table.id
-  for_each       = aws_subnet.private_subnets
-  subnet_id      = each.value.id
-}
-
-#Create Internet Gateway
-resource "aws_internet_gateway" "internet_gateway" {
-  vpc_id = aws_vpc.vpc.id
-  tags = {
-    Name = "demo_igw"
-  }
-}
-
-#Create EIP for NAT Gateway
-resource "aws_eip" "nat_gateway_eip" {
-  vpc        = true
-  depends_on = [aws_internet_gateway.internet_gateway]
-  tags = {
-    Name = "demo_igw_eip"
-  }
-}
-
-#Create NAT Gateway
-resource "aws_nat_gateway" "nat_gateway" {
-  depends_on    = [aws_subnet.public_subnets]
-  allocation_id = aws_eip.nat_gateway_eip.id
-  subnet_id     = aws_subnet.public_subnets["public_subnet_1"].id
-  tags = {
-    Name = "demo_nat_gateway"
-  }
-}
-
-resource "aws_s3_bucket" "my-new-S3-bucket" {
-  bucket = "my-new-tf-test-bucket-bryn"
-  acl    = "private"
 
   tags = {
-    Name    = "My S3 Bucket"
-    Purpose = "Intro to Resource Blocks Lab"
+    Name = "dev"
   }
 }
 
-resource "aws_security_group" "my-new-security-group" {
-  name        = "web_server_inbound"
-  description = "Allow inbound traffic on tcp/443"
-  vpc_id      = aws_vpc.vpc.id
+resource "aws_subnet" "dev_subnet" {
+  vpc_id            = aws_vpc.dev-vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    name = "dev"
+  }
+}
+
+#associate route table with subnet
+resource "aws_route_table_association" "dev_association" {
+  subnet_id      = aws_subnet.dev_subnet.id
+  route_table_id = aws_route_table.dev_route_table.id
+}
+
+#create security group to restrict and allow only certain ports
+resource "aws_security_group" "allow_web" {
+  name        = "allow_web_traffic"
+  description = "Allow web traffic"
+  vpc_id      = aws_vpc.dev-vpc.id
 
   ingress {
-    description = "Allow 443 from the Internet"
+    description = "HTTPS from VPC"
     from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    to_port     = 443
+  }
+
+  ingress {
+    description = "HTTP from VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "SSH from VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name    = "web_server_inbound"
-    Purpose = "Intro to Resource Blocks Lab"
+    Name = "allow_web"
   }
 }
 
-resource "random_id" "randomness" {
-  byte_length = 16
+#network interface for web server
+resource "aws_network_interface" "web-server-nic" {
+  subnet_id       = aws_subnet.dev_subnet.id
+  private_ips     = ["10.0.1.50"]
+  security_groups = [aws_security_group.allow_web.id]
 }
 
-resource "aws_subnet" "variables-subnet" {
-  vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = "10.0.250.0/24"
-  availability_zone       = us-east-1a
-  map_public_ip_on_launch = true
+resource "aws_eip" "one" {
+  vpc                       = true
+  network_interface         = aws_network_interface.web-server-nic.id
+  associate_with_private_ip = "10.0.1.50"
+  depends_on = [
+    aws_internet_gateway.dev-gw
+  ]
+}
+
+#web server
+resource "aws_instance" "web-server-instance" {
+  ami               = "ami-09d56f8956ab235b3"
+  instance_type     = "t2.micro"
+  availability_zone = "us-east-1a"
+  key_name          = "main-key"
+
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.web-server-nic.id
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo apt update -y
+              sudo apt install apache2 -y
+              sudo systemctl start apache2
+              sudo bash -c 'echo your very first web server > /var/www/html/index.html
+              EOF
 
   tags = {
-    Name      = "sub-variables-us-east-1a"
-    Terraform = "true"
+    "name" = "web-server"
   }
 }
+
+#Import My S3 Bucket
+resource "aws_s3_bucket" "my-terraform-state-jc" {
+  bucket = "my-terraform-state-jc"
+}
+
+
+
+
+
