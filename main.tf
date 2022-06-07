@@ -298,7 +298,7 @@ resource "aws_instance" "web-server-instance" {
 
 
 resource "aws_instance" "Swarm-Host-One" {
-  ami               = "ami-085fd847b97a45ec2"
+  ami               = "ami-0664d9620e03630ec"
   instance_type     = "t2.small"
   availability_zone = "us-east-1a"
   key_name          = "swarm-key"
