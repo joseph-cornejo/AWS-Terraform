@@ -9,6 +9,11 @@ terraform {
   }
 }
 
+#Import My S3 Bucket
+resource "aws_s3_bucket" "my-terraform-state-jc" {
+  bucket = "my-terraform-state-jc"
+}
+
 #Define the VPC 
 resource "aws_vpc" "dev-vpc" {
   cidr_block = "10.0.0.0/16"
@@ -38,6 +43,7 @@ resource "aws_internet_gateway" "dev-gw" {
     Name = "dev"
   }
 }
+
 
 #define VPC for SWARM
 resource "aws_internet_gateway" "swarm-gw" {
@@ -204,6 +210,27 @@ resource "aws_network_interface" "web-server-nic" {
   security_groups = [aws_security_group.allow_web.id]
 }
 
+#--------------------------------------network interfaces for SWARM Hosts------------------------------------------------
+resource "aws_network_interface" "swarm-nic-one" {
+  subnet_id       = aws_subnet.swarm_subnet.id
+  private_ips     = ["10.0.1.51"]
+  security_groups = [aws_security_group.swarm_allow_web.id]
+}
+
+resource "aws_network_interface" "swarm-nic-two" {
+  subnet_id       = aws_subnet.swarm_subnet.id
+  private_ips     = ["10.0.1.52"]
+  security_groups = [aws_security_group.swarm_allow_web.id]
+}
+
+resource "aws_network_interface" "swarm-nic-three" {
+  subnet_id       = aws_subnet.swarm_subnet.id
+  private_ips     = ["10.0.1.53"]
+  security_groups = [aws_security_group.swarm_allow_web.id]
+}
+#-------------------------------------- end of network interfaces for SWARM Hosts--------------------------------------------
+
+# Elastic IP for web server
 resource "aws_eip" "one" {
   vpc                       = true
   network_interface         = aws_network_interface.web-server-nic.id
@@ -213,7 +240,38 @@ resource "aws_eip" "one" {
   ]
 }
 
-#web server
+#-------------------------------------- Elastic IPs for SWARM Hosts---------------------------------------------------
+
+resource "aws_eip" "swarm_one" {
+  vpc                       = true
+  network_interface         = aws_network_interface.swarm-nic-one.id
+  associate_with_private_ip = "10.0.1.51"
+  depends_on = [
+    aws_internet_gateway.swarm-gw
+  ]
+}
+
+resource "aws_eip" "swarm_two" {
+  vpc                       = true
+  network_interface         = aws_network_interface.swarm-nic-two.id
+  associate_with_private_ip = "10.0.1.52"
+  depends_on = [
+    aws_internet_gateway.swarm-gw
+  ]
+}
+
+resource "aws_eip" "swarm_three" {
+  vpc                       = true
+  network_interface         = aws_network_interface.swarm-nic-three.id
+  associate_with_private_ip = "10.0.1.53"
+  depends_on = [
+    aws_internet_gateway.swarm-gw
+  ]
+}
+#-------------------------------------- End of Elastic Ips for SWARM Hosts--------------------------------------------
+
+
+#--------------------------------------- Instances -------------------------------------------------------------------
 resource "aws_instance" "web-server-instance" {
   ami               = "ami-09d56f8956ab235b3"
   instance_type     = "t2.micro"
@@ -230,17 +288,36 @@ resource "aws_instance" "web-server-instance" {
               sudo apt update -y
               sudo apt install apache2 -y
               sudo systemctl start apache2
-              sudo bash -c 'echo your very first web server > /var/www/html/index.html
+              sudo bash -c 'echo your very first web server > /var/www/html/index.html'
               EOF
 
   tags = {
-    "name" = "web-server"
+    Name = "web-server"
   }
 }
 
-#Import My S3 Bucket
-resource "aws_s3_bucket" "my-terraform-state-jc" {
-  bucket = "my-terraform-state-jc"
+
+resource "aws_instance" "Swarm-Host-One" {
+  ami               = "ami-085fd847b97a45ec2"
+  instance_type     = "t2.small"
+  availability_zone = "us-east-1a"
+  key_name          = "swarm-key"
+
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.swarm-nic-one.id
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo apt-get udpate
+              sudo apt-get upgrade
+              sudo curl -sSL https://get.docker.com/ | sh              
+              EOF
+
+  tags = {
+    Name = "Swarm"
+  }
 }
 
 
