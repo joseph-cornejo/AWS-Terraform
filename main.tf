@@ -298,7 +298,7 @@ resource "aws_instance" "web-server-instance" {
 
 
 resource "aws_instance" "Swarm-Host-One" {
-  ami               = "ami-0022f774911c1d690"
+  ami               = "ami-09d56f8956ab235b3"
   instance_type     = "t2.small"
   availability_zone = "us-east-1a"
   key_name          = "swarm-key"
@@ -310,13 +310,59 @@ resource "aws_instance" "Swarm-Host-One" {
 
   user_data = <<-EOF
               #!/bin/bash
-              sudo apt-get udpate
+              sudo yum update
               sudo apt-get upgrade
               sudo curl -sSL https://get.docker.com/ | sh              
               EOF
 
   tags = {
-    Name = "Swarm"
+    Name = "Swarm-Host-One"
+  }
+}
+
+resource "aws_instance" "Swarm-Host-Two" {
+  ami               = "ami-09d56f8956ab235b3"
+  instance_type     = "t2.small"
+  availability_zone = "us-east-1a"
+  key_name          = "swarm-key"
+
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.swarm-nic-two.id
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update
+              sudo apt-get upgrade
+              sudo curl -sSL https://get.docker.com/ | sh              
+              EOF
+
+  tags = {
+    Name = "Swarm-Host-Two"
+  }
+}
+
+resource "aws_instance" "Swarm-Host-Three" {
+  ami               = "ami-09d56f8956ab235b3"
+  instance_type     = "t2.small"
+  availability_zone = "us-east-1a"
+  key_name          = "swarm-key"
+
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.swarm-nic-three.id
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update
+              sudo apt-get upgrade
+              sudo curl -sSL https://get.docker.com/ | sh              
+              EOF
+
+  tags = {
+    Name = "Swarm-Host-Three"
   }
 }
 
