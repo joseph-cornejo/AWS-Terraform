@@ -191,13 +191,13 @@ resource "aws_security_group" "swarm_allow_web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress = [ {
+  ingress = {
     cidr_blocks = [ "10.0.1.0/24" ]
     description = "Allow Communication Between Instances"
     from_port = 0
     protocol = "-1"
     to_port = 0
-  } ]
+  }
 
   egress {
     from_port   = 0
