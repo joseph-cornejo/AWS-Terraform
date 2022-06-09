@@ -45,7 +45,7 @@ resource "aws_internet_gateway" "dev-gw" {
 }
 
 
-#define VPC for SWARM
+#define GW for SWARM
 resource "aws_internet_gateway" "swarm-gw" {
   vpc_id = aws_vpc.swarm-vpc.id
 
@@ -356,9 +356,12 @@ resource "aws_instance" "Swarm-Host-Three" {
 
   user_data = <<-EOF
               #!/bin/bash
-              sudo yum update
+              sudo apt-get update
               sudo apt-get upgrade
-              sudo curl -sSL https://get.docker.com/ | sh              
+              sudo curl -sSL https://get.docker.com/ | sh   
+              sudo groupadd docker
+              sudo usermod -aG docker $USER
+              newgrp docker           
               EOF
 
   tags = {
