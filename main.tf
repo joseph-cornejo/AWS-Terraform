@@ -155,7 +155,7 @@ resource "aws_instance" "web-server-instance" {
 
 #Define the VPC for my Linux Enviornment 
 resource "aws_vpc" "linux-vpc" {
-  cidr_block = "10.0.10.0/16"
+  cidr_block = "172.31.0.0/16"
 
   tags = {
     Environment = "Linux_Environment"
@@ -189,7 +189,7 @@ resource "aws_route_table" "linux_route_table" {
 #subnet for dev VPC
 resource "aws_subnet" "linux_subnet" {
   vpc_id            = aws_vpc.linux-vpc.id
-  cidr_block        = "10.0.10.0/24"
+  cidr_block        = "172.31.15.0/24"
   availability_zone = "us-east-1a"
 
   tags = {
@@ -233,7 +233,7 @@ resource "aws_security_group" "allow_linux_web" {
 #network interface for web server
 resource "aws_network_interface" "Linux-server-nic" {
   subnet_id       = aws_subnet.linux_subnet.id
-  private_ips     = ["10.0.10.250"]
+  private_ips     = ["172.31.15.250"]
   security_groups = [aws_security_group.allow_linux_web.id]
 }
 
@@ -241,7 +241,7 @@ resource "aws_network_interface" "Linux-server-nic" {
 resource "aws_eip" "linux_one" {
   vpc                       = true
   network_interface         = aws_network_interface.linux-server-nic.id
-  associate_with_private_ip = "10.0.10.250"
+  associate_with_private_ip = "172.31.15.250"
   depends_on = [
     aws_internet_gateway.linux-gw
   ]
