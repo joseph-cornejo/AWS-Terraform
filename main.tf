@@ -9,7 +9,7 @@ terraform {
   }
 }
 
-#Import My S3 Bucket
+#My S3 Bucket
 resource "aws_s3_bucket" "my-terraform-state-jc" {
   bucket = "my-terraform-state-jc"
 }
@@ -147,4 +147,102 @@ resource "aws_instance" "web-server-instance" {
   tags = {
     Name = "web-server"
   }
+}
+
+
+#--------------------------------------- Linux VPC -------------------------------------------------------------------
+#Creating this VPC with a linux box in order to practice my linux management
+
+#Define the VPC for my Linux Enviornment 
+resource "aws_vpc" "linux-vpc" {
+  cidr_block = "10.0.10.0/16"
+
+  tags = {
+    Environment = "Linux_Environment"
+    Terraform   = "true"
+  }
+}
+
+#Linux Gateway
+resource "aws_internet_gateway" "linux-gw" {
+  vpc_id = aws_vpc.linux-vpc.id
+
+  tags = {
+    Name = "Linux-GW"
+  }
+}
+
+#Route Table for Gateway
+resource "aws_route_table" "linux_route_table" {
+  vpc_id = aws_vpc.linux-vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.linux-gw.id
+  }
+
+  tags = {
+    Name = "Linux-RT"
+  }
+}
+
+#subnet for dev VPC
+resource "aws_subnet" "linux_subnet" {
+  vpc_id            = aws_vpc.linux-vpc.id
+  cidr_block        = "10.0.10.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    name = "dev"
+  }
+}
+
+
+#associate route table with subnet
+resource "aws_route_table_association" "linux_association" {
+  subnet_id      = aws_subnet.linux_subnet.id
+  route_table_id = aws_route_table.linux_route_table.id
+}
+
+#create security group to restrict and allow only certain ports
+resource "aws_security_group" "allow_linux_web" {
+  name        = "Allow_linux_web_traffic"
+  description = "Allow web traffic"
+  vpc_id      = aws_vpc.linux-vpc.id
+
+  ingress {
+    description = "SSH from VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow_linux_traffic"
+  }
+}
+
+#network interface for web server
+resource "aws_network_interface" "Linux-server-nic" {
+  subnet_id       = aws_subnet.linux_subnet.id
+  private_ips     = ["10.0.10.250"]
+  security_groups = [aws_security_group.allow_linux_web.id]
+}
+
+# Elastic IP for web server
+resource "aws_eip" "linux_one" {
+  vpc                       = true
+  network_interface         = aws_network_interface.linux-server-nic.id
+  associate_with_private_ip = "10.0.10.250"
+  depends_on = [
+    aws_internet_gateway.linux-gw
+  ]
 }
