@@ -231,7 +231,7 @@ resource "aws_security_group" "allow_linux_web" {
 }
 
 #network interface for web server
-resource "aws_network_interface" "Linux-server-nic" {
+resource "aws_network_interface" "linux-server-nic" {
   subnet_id       = aws_subnet.linux_subnet.id
   private_ips     = ["172.31.15.250"]
   security_groups = [aws_security_group.allow_linux_web.id]
