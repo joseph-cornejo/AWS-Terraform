@@ -249,7 +249,7 @@ resource "aws_eip" "linux_one" {
 
 resource "aws_instance" "linux-server-instance" {
   ami               = "ami-052efd3df9dad4825"
-  instance_type     = "t2ssss.micro"
+  instance_type     = "t2.micro"
   availability_zone = "us-east-1a"
   key_name          = "Ubuntu"
 
