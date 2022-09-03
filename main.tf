@@ -283,7 +283,7 @@ resource "aws_instance" "linux-server-instance" {
     }
   }
   
-  resource "aws_db_instanace" "mybudget" {
+  resource "aws_db_instance" "mybudget" {
     identifier = "mybudget"
     instance_class = "db.t3.micro"
     allocated_storage = 15
