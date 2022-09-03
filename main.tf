@@ -269,3 +269,32 @@ resource "aws_instance" "linux-server-instance" {
   }
 
   }
+
+
+#--------------------------------------- RDS -------------------------------------------------------------------
+  
+  resource "aws_db_parameter_group" "mybudget"{
+    name = "mybudget"
+    family = "mysql"
+
+    parameter {
+      name = "log_connections"
+      value = "1"
+    }
+  }
+  
+  resource "aws_db_instanace" "mybudget" {
+    identifier = "mybudget"
+    instance_class = "db.t3.micro"
+    allocated_storage = 15
+    engine = "mysql"
+    engine_version = "15.0"
+    username = "admin"
+    password = var.db_password
+    db_subnet_group_name = dev_subnet.name
+    vpc_security_group_ids = [aws_security_group.allow_linux_web.id]
+    parameter_group_name = aws_db_parameter_group.mybudget.name
+    publicly_accessible = false
+    skip_final_snapshot = true
+
+  }
