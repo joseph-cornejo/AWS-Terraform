@@ -273,6 +273,15 @@ resource "aws_instance" "linux-server-instance" {
 
 #--------------------------------------- RDS -------------------------------------------------------------------
   
+resource "aws_db_subnet_group" "mybudget_subnet" {
+  name       = "mybudget_subnet"
+  subnet_ids = [aws_subnet.linux_subnet.id]
+
+  tags = {
+    Name = "mybudget_subnet"
+  }
+}
+
   resource "aws_db_parameter_group" "mybudget"{
     name = "mybudget"
     family = "mysql"
@@ -291,7 +300,7 @@ resource "aws_instance" "linux-server-instance" {
     engine_version = "15.0"
     username = "admin"
     password = var.db_password
-    db_subnet_group_name = aws_subnet.dev_subnet.name
+    db_subnet_group_name = aws_db_subnet_group.mybudget_subnet.name
     vpc_security_group_ids = [aws_security_group.allow_linux_web.id]
     parameter_group_name = aws_db_parameter_group.mybudget.name
     publicly_accessible = false
