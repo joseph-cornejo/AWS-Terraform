@@ -272,10 +272,22 @@ resource "aws_instance" "linux-server-instance" {
 
 
 #--------------------------------------- RDS -------------------------------------------------------------------
-  
+
+resource "aws_subnet" "rds_subnet" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+}
+
+resource "aws_subnet" "rds_subnet1" {
+  vpc_id     = aws_vpc.main.id
+  cidr_block = "10.0.2.0/24"
+  availability_zone = "us-east-1b"
+}
+
 resource "aws_db_subnet_group" "mybudget_subnet" {
   name       = "mybudget_subnet"
-  subnet_ids = [aws_subnet.linux_subnet.id]
+  subnet_ids = [aws_subnet.rds_subnet.id, aws.subnet.rds_subnet1]
 
   tags = {
     Name = "mybudget_subnet"
