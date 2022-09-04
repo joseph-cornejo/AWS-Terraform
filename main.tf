@@ -298,7 +298,7 @@ resource "aws_db_subnet_group" "mybudget_subnet" {
     instance_class = "db.t3.micro"
     allocated_storage = 15
     engine = "mysql"
-    engine_version = "15.0"
+    engine_version = "8.0.27"
     username = "admin"
     password = var.db_password
     db_subnet_group_name = aws_db_subnet_group.mybudget_subnet.name
