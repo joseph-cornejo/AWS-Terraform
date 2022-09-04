@@ -287,7 +287,7 @@ resource "aws_subnet" "rds_subnet1" {
 
 resource "aws_db_subnet_group" "mybudget_subnet" {
   name       = "mybudget_subnet"
-  subnet_ids = [aws_subnet.rds_subnet.id, aws.subnet.rds_subnet1]
+  subnet_ids = [aws_subnet.rds_subnet.id, aws.subnet.rds_subnet1.id]
 
   tags = {
     Name = "mybudget_subnet"
