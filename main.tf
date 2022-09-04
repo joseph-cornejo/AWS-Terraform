@@ -302,7 +302,7 @@ resource "aws_db_subnet_group" "mybudget_subnet" {
     username = "admin"
     password = var.db_password
     db_subnet_group_name = aws_db_subnet_group.mybudget_subnet.name
-    vpc_security_group_ids = [aws_security_group.allow_linux_web.id]
+    vpc_security_group_ids = [aws_security_group.allow_web.id]
     publicly_accessible = false
     skip_final_snapshot = true
 
