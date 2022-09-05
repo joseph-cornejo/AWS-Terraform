@@ -17,6 +17,8 @@ resource "aws_s3_bucket" "my-terraform-state-jc" {
 #Define the VPC 
 resource "aws_vpc" "dev-vpc" {
   cidr_block = "10.0.0.0/16"
+  enable_dns_support = true
+  enable_dns_hostnames = true
 
   tags = {
     Environment = "dev_environment"
@@ -311,7 +313,7 @@ resource "aws_db_subnet_group" "mybudget_subnet" {
     password = var.db_password
     db_subnet_group_name = aws_db_subnet_group.mybudget_subnet.name
     vpc_security_group_ids = [aws_security_group.allow_web.id]
-    publicly_accessible = false
+    publicly_accessible = true
     skip_final_snapshot = true
 
   }
