@@ -303,6 +303,19 @@ resource "aws_db_subnet_group" "mybudget_subnet" {
     Name = "mybudget_subnet"
   }
 }
+
+#associate route table with subnet
+resource "aws_route_table_association" "rds_association" {
+  subnet_id      = aws_subnet.rds_subnet.id
+  route_table_id = aws_route_table.dev_route_table.id
+}
+
+#associate route table with subnet
+resource "aws_route_table_association" "rds1_association" {
+  subnet_id      = aws_subnet.rds_subnet1.id
+  route_table_id = aws_route_table.dev_route_table.id
+}
+
   resource "aws_db_instance" "mybudget" {
     identifier = "mybudget"
     instance_class = "db.t3.micro"
