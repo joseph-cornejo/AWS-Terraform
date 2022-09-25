@@ -335,7 +335,7 @@ resource "aws_route_table_association" "rds1_association" {
 
     source = "github.com/joseph-cornejo/New_Client_Module"
 
-    client_name = gwinnettmechanical
+    client_name = "gwinnettmechanical"
 
     client_vpc = "dev-vpc"
     cidr_block = "172.32.0.0/16"
