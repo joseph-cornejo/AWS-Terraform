@@ -330,3 +330,19 @@ resource "aws_route_table_association" "rds1_association" {
     skip_final_snapshot = true
 
   }
+
+  module "New_Client_Module" {
+
+    source = "github.com/joseph-cornejo/New_Client_Module"
+
+    client_name = gwinnettmechanical
+
+    client_vpc = "dev-vpc"
+    cidr_block = "172.32.0.0/16"
+    availability_zone = "us-east-1a"
+    private_ips = "172.32.0.51"
+    client_ami = "ami-052efd3df9dad4825"
+    client_instance_type = "t2.micro"
+    key_name = "main-key"
+    user_data_template = "userdata.tpl"
+  }
